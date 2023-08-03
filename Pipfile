@@ -6,11 +6,12 @@ name = "pypi"
 [packages]
 install = "*"
 sqlalchemy = "*"
-psycopg2 = "*"
 alembic = "*"
 aiohttp = "*"
 beautifulsoup4 = "*"
 django = "*"
+asyncpg = "*"
+psycopg2 = "*"
 
 [dev-packages]
 pytest = "*"
