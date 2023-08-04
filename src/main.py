@@ -1,12 +1,12 @@
-from config import DB_USER, DB_PASSWORD, DB_HOST, DB_PORT, DB_NAME
-from sqlalchemy import create_engine
-from sqlalchemy.orm import Session
 import itertools
-
 import asyncio
 from database.models import Article, Hub
 from parser.hub_parser import parse_hub, parse_hub_page
 from parser.article_parser import parse_article_page
+from config import DB_USER, DB_PASSWORD, DB_HOST, DB_PORT, DB_NAME
+
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session
 
 
 MAX_CONCURRENT_REQUESTS = 3

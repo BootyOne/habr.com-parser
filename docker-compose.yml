@@ -19,7 +19,7 @@ services:
       - db
     environment:
       DATABASE_URL: postgresql://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}
-    command:  pipenv run python src/main.py
+    command:  sh -c "pipenv run python src/migration_script.py && pipenv run python src/main.py"
 
 volumes:
   pg_data:

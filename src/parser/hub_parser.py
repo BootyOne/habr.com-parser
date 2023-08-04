@@ -1,14 +1,11 @@
-import aiohttp
+from typing import Optional
+from parser.fetch import fetch
+from asyncio import Semaphore
+
 from bs4 import BeautifulSoup
 
 
-async def fetch(url):
-    async with aiohttp.ClientSession() as session:
-        async with session.get(url) as response:
-            return await response.text()
-
-
-async def parse_hub(hub_url: str):
+async def parse_hub(hub_url: str) -> Optional[list[dict]]:
     html = await fetch(hub_url)
 
     soup = BeautifulSoup(html, 'html.parser')
@@ -23,7 +20,7 @@ async def parse_hub(hub_url: str):
     return [{'name': link.find('span').text.strip(), 'url': f"https://habr.com{link['href']}"} for link in hub_links]
 
 
-async def parse_hub_page(hub_url: str, hub_id: int, semaphore):
+async def parse_hub_page(hub_url: str, hub_id: int, semaphore: Semaphore) -> list[tuple]:
     async with semaphore:
         html = await fetch(hub_url)
 

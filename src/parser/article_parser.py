@@ -1,13 +1,12 @@
+from typing import Optional
 from datetime import datetime
+from parser.fetch import fetch
 
-import aiohttp
 from bs4 import BeautifulSoup
 
 
-async def parse_article_page(article_url):
-    async with aiohttp.ClientSession() as session:
-        async with session.get(article_url) as response:
-            html = await response.text()
+async def parse_article_page(article_url: str) -> Optional[dict]:
+    html = await fetch(article_url)
 
     soup = BeautifulSoup(html, 'html.parser')
 

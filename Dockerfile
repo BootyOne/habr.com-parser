@@ -8,4 +8,4 @@ RUN pipenv install
 
 COPY . /app
 
-CMD ["pipenv", "run", "python", "src/main.py"]
+# CMD ["pipenv", "run", "python", "src/main.py"]
