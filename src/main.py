@@ -4,13 +4,12 @@ from sqlalchemy.orm import Session
 import itertools
 
 import asyncio
-#from database.database import get_async_session
 from database.models import Article, Hub
 from parser.hub_parser import parse_hub, parse_hub_page
 from parser.article_parser import parse_article_page
 
 
-MAX_CONCURRENT_REQUESTS = 5
+MAX_CONCURRENT_REQUESTS = 3
 DB_URL = f'postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}'
 engine = create_engine(DB_URL)
 
@@ -18,13 +17,20 @@ engine = create_engine(DB_URL)
 async def main():
     while True:
         all_hub_data = []
-        hub_data = await parse_hub('https://habr.com/ru/hubs/')
-        all_hub_data.extend(hub_data)
+        idx = 1
+        hubs_on_page = True
+        while hubs_on_page:
+            hub_data = await parse_hub(f'https://habr.com/ru/hubs/page{idx}/')
+            idx += 1
+            if hub_data is None:
+                hubs_on_page = False
+            else:
+                all_hub_data.extend(hub_data)
 
         with Session(engine) as session:
             hub_ids = {}
             for hub_info in all_hub_data:
-                existing_hub = session.query(Hub).filter_by(name=hub_info['name']).first() # фильтровать по ссылке!!!!
+                existing_hub = session.query(Hub).filter_by(url=hub_info['url']).first()
                 if existing_hub:
                     hub_ids[hub_info['url']] = existing_hub.id
                 else:
@@ -34,9 +40,12 @@ async def main():
                     session.refresh(hub)
                     hub_ids[hub_info['url']] = hub.id
 
-        article_urls = [await parse_hub_page(hub_info['url'], hub_ids[hub_info['url']]) for hub_info in all_hub_data]
-        all_article_urls = list(itertools.chain.from_iterable(article_urls))
         semaphore = asyncio.Semaphore(MAX_CONCURRENT_REQUESTS)
+
+        tasks = [parse_hub_page(hub_info['url'], hub_ids[hub_info['url']], semaphore) for hub_info in all_hub_data]
+        article_urls = await asyncio.gather(*tasks)
+        all_article_urls = list(itertools.chain.from_iterable(article_urls))
+
         tasks = [process_article(semaphore, article_url[0], article_url[1]) for article_url in all_article_urls]
         await asyncio.gather(*tasks)
 
@@ -55,7 +64,7 @@ async def process_article(semaphore, article_url, hub_id):
                     new_article = Article(**article_data)
                     session.add(new_article)
                     session.commit()
-                    print(f"Сохранено: {article_data}")
+                    print(f"Сохранено: {article_data['title']}")
                 else:
                     print("Статья уже существует в базе данных. Ничего не сохранено.")
         else:
